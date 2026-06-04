@@ -89,7 +89,7 @@ interface SpeakerPageRouteProps {
   onSpeakerClick: (id: number) => void;
 }
 
-function SpeakerPageRoute({onPlanChange, onSpeakerClick}: SpeakerPageRouteProps) {
+function SpeakerPageRoute({onPlanChange}: SpeakerPageRouteProps) {
   const {speakerId} = useParams<{ speakerId: string }>();
   const navigate = useNavigate();
   return (

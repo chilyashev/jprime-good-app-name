@@ -200,7 +200,7 @@ function DesktopScheduleGrid({
           borderLeft: 1,
           borderColor: 'divider'
         }}>
-          {halls.map((hall, i) => (
+          {halls.map((hall) => (
               <Typography key={hall} variant="subtitle1" sx={{
                 px: 2, py: 1.5, fontWeight: 700, borderBottom: 1, borderRight: 1, borderColor: 'divider',
                 bgcolor: 'background.paper', position: 'sticky', top: '64px', zIndex: 9, textAlign: 'center',
