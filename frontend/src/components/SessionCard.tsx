@@ -9,6 +9,7 @@ import Tooltip from '@mui/material/Tooltip';
 import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import type {SxProps, Theme} from '@mui/material';
 import type {Session} from '../api/sessionsApi';
 import {addToPlan, isInPlan, removeFromPlan} from '../utils/visitPlan';
 
@@ -24,9 +25,10 @@ interface Props {
   showHall?: boolean;
   onPlanChange?: () => void;
   onSpeakerClick?: (speakerId: number) => void;
+    sx?: SxProps<Theme>;
 }
 
-export default function SessionCard({session, isCurrent, showHall, onPlanChange, onSpeakerClick}: Props) {
+export default function SessionCard({session, isCurrent, showHall, onPlanChange, onSpeakerClick, sx}: Props) {
   const [saved, setSaved] = useState(() => isInPlan(session.id));
   const [expanded, setExpanded] = useState(false);
 
@@ -59,6 +61,7 @@ export default function SessionCard({session, isCurrent, showHall, onPlanChange,
           borderColor: 'primary.main',
           bgcolor: 'rgba(98,0,234,0.12)',
         }),
+          ...sx,
       }}>
       <CardContent sx={{ pb: '12px !important' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>

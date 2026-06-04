@@ -271,6 +271,8 @@ function DesktopScheduleGrid({
                     p: 0.5,
                     borderRight: hasRightBorder ? 1 : 0,
                     borderColor: 'divider',
+                    display: 'flex',
+                    flexDirection: 'column',
                   }}
               >
                 <SessionCard
@@ -278,6 +280,7 @@ function DesktopScheduleGrid({
                     isCurrent={isCurrent}
                     onPlanChange={onPlanChange}
                     onSpeakerClick={onSpeakerClick}
+                    sx={{mb: 0, flex: 1}}
                 />
               </Box>
           );
