@@ -15,6 +15,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
+import Divider from '@mui/material/Divider';
 import {ThemeProvider, useMediaQuery, useTheme} from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import EventIcon from '@mui/icons-material/Event';
@@ -23,6 +24,8 @@ import MapIcon from '@mui/icons-material/Map';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import CheckIcon from '@mui/icons-material/Check';
 import AgendaPage from './pages/AgendaPage';
 import {type ConferenceSettings, fetchConferenceSettings} from './api/conferenceApi';
 import PlanPage from './pages/PlanPage';
@@ -35,6 +38,18 @@ type Page = 'agenda' | 'plan' | 'map';
 type ThemeMode = 'light' | 'dark' | 'system';
 
 const THEME_KEY = 'jprime-theme-mode';
+
+const today = new Date().toISOString().slice(0, 10);
+
+function formatDayLabel(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function pickDay(available: string[], prev: string): string {
+  if (prev && available.includes(prev)) return prev;
+  return available.includes(today) ? today : (available[0] ?? '');
+}
 
 const themeModeOptions: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [
   {value: 'light', label: 'Light', icon: <LightModeIcon fontSize="small"/>},
@@ -80,6 +95,9 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
   const [selectedSpeakerId, setSelectedSpeakerId] = useState<number | null>(null);
   const [previousPage, setPreviousPage] = useState<Page>('agenda');
   const [conference, setConference] = useState<ConferenceSettings | null>(null);
+  const [days, setDays] = useState<string[]>([]);
+  const [selectedDay, setSelectedDay] = useState('');
+  const [agendaMenuAnchor, setAgendaMenuAnchor] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     fetchConferenceSettings().then(setConference).catch(() => {
@@ -113,11 +131,68 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
     setPage(newPage);
   }
 
+  function handleDaysLoaded(loadedDays: string[]) {
+    setDays(loadedDays);
+    setSelectedDay(prev => pickDay(loadedDays, prev));
+  }
+
+  function handleAgendaNavClick(e: React.MouseEvent<HTMLElement>) {
+    handlePageChange('agenda');
+    if (days.length > 0) setAgendaMenuAnchor(e.currentTarget);
+  }
+
+  function handleDaySelect(day: string) {
+    setSelectedDay(day);
+    setAgendaMenuAnchor(null);
+  }
+
+  const agendaLabel = selectedDay ? formatDayLabel(selectedDay) : 'Agenda';
+
   const planBadge = planCount > 0 ? (
     <Badge badgeContent={planCount} color="primary">
       <EventNoteIcon />
     </Badge>
   ) : <EventNoteIcon />;
+
+  const dayMenu = (
+    <Menu
+      anchorEl={agendaMenuAnchor}
+      open={Boolean(agendaMenuAnchor)}
+      onClose={() => setAgendaMenuAnchor(null)}
+      anchorOrigin={isDesktop
+        ? { vertical: 'bottom', horizontal: 'left' }
+        : { vertical: 'top', horizontal: 'center' }}
+      transformOrigin={isDesktop
+        ? { vertical: 'top', horizontal: 'left' }
+        : { vertical: 'bottom', horizontal: 'center' }}
+    >
+      <MenuItem disabled sx={{ opacity: '1 !important' }}>
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Select day
+        </Typography>
+      </MenuItem>
+      <Divider />
+      {days.map(day => (
+        <MenuItem key={day} onClick={() => handleDaySelect(day)}>
+          <ListItemIcon sx={{ minWidth: 32 }}>
+            {selectedDay === day
+              ? <CheckIcon fontSize="small" color="primary" />
+              : <Box sx={{ width: 20 }} />}
+          </ListItemIcon>
+          <ListItemText>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {formatDayLabel(day)}
+              {day === today && (
+                <Typography component="span" variant="caption" color="primary.main" sx={{ fontWeight: 600 }}>
+                  Today
+                </Typography>
+              )}
+            </Box>
+          </ListItemText>
+        </MenuItem>
+      ))}
+    </Menu>
+  );
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -136,7 +211,18 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
             <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
               {!selectedSpeakerId && (
                   <Tabs value={page} onChange={(_, v) => handlePageChange(v)}>
-                    <Tab icon={<EventIcon/>} label="Agenda" value="agenda" iconPosition="start"/>
+                    <Tab
+                      icon={<EventIcon/>}
+                      label={
+                        <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
+                          {agendaLabel}
+                          <ArrowDropDownIcon sx={{ fontSize: 18, ml: 0.25, mb: '-1px' }} />
+                        </Box>
+                      }
+                      value="agenda"
+                      iconPosition="start"
+                      onClick={handleAgendaNavClick}
+                    />
                     <Tab icon={planBadge} label="My Plan" value="plan" iconPosition="start"/>
                     <Tab icon={<MapIcon/>} label="Map" value="map" iconPosition="start"/>
                   </Tabs>
@@ -162,6 +248,8 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
         </AppBar>
       )}
 
+      {dayMenu}
+
       <Container maxWidth={isDesktop ? 'xl' : 'sm'} sx={{ flex: 1, py: 0, pb: isDesktop ? 0 : 8 }}>
         {selectedSpeakerId !== null ? (
             <SpeakerPage
@@ -172,7 +260,14 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
             />
         ) : (
             <>
-              {page === 'agenda' && <AgendaPage onPlanChange={handlePlanChange} onSpeakerClick={handleSpeakerClick}/>}
+              {page === 'agenda' && (
+                <AgendaPage
+                  selectedDay={selectedDay}
+                  onDaysLoaded={handleDaysLoaded}
+                  onPlanChange={handlePlanChange}
+                  onSpeakerClick={handleSpeakerClick}
+                />
+              )}
               {page === 'plan' && (
                   <PlanPage
                       onGoToAgenda={() => handlePageChange('agenda')}
@@ -189,7 +284,12 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
       {!isDesktop && !selectedSpeakerId && (
         <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
           <BottomNavigation value={page} onChange={(_, v) => handlePageChange(v)} showLabels>
-            <BottomNavigationAction label="Agenda" value="agenda" icon={<EventIcon />} />
+            <BottomNavigationAction
+              label={agendaLabel}
+              value="agenda"
+              icon={<EventIcon />}
+              onClick={handleAgendaNavClick}
+            />
             <BottomNavigationAction label="My Plan" value="plan" icon={planBadge}/>
             <BottomNavigationAction label="Map" value="map" icon={<MapIcon/>}/>
           </BottomNavigation>

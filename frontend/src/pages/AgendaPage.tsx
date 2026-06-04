@@ -2,8 +2,6 @@ import {useEffect, useRef, useState} from 'react';
 import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import Chip from '@mui/material/Chip';
-import Stack from '@mui/material/Stack';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -20,37 +18,30 @@ function localNow(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
-function formatDayLabel(dateStr: string): string {
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
 function extractDays(sessions: Session[]): string[] {
   const days = new Set(sessions.map(s => s.startTime.slice(0, 10)));
   return [...days].sort();
 }
 
 interface Props {
+  selectedDay: string;
+  onDaysLoaded: (days: string[]) => void;
   onPlanChange: () => void;
   onSpeakerClick: (speakerId: number) => void;
 }
 
-export default function AgendaPage({onPlanChange, onSpeakerClick}: Props) {
+export default function AgendaPage({selectedDay, onDaysLoaded, onPlanChange, onSpeakerClick}: Props) {
   const halls = ['hall A', 'hall B', 'workshops'];
   const [selectedHall, setSelectedHall] = useState(0);
   const [tabsStuck, setTabsStuck] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [days, setDays] = useState<string[]>([]);
-  const [selectedDay, setSelectedDay] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [now, setNow] = useState(() => localNow());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentCardRef = useRef<HTMLDivElement>(null);
   const [currentCardVisible, setCurrentCardVisible] = useState(true);
-
-  const today = new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
@@ -69,24 +60,17 @@ export default function AgendaPage({onPlanChange, onSpeakerClick}: Props) {
     return () => observer.disconnect();
   }, []);
 
-  function pickDay(available: string[], prev: string): string {
-    if (prev && available.includes(prev)) return prev;
-    return available.includes(today) ? today : (available[0] ?? '');
-  }
-
   async function loadSessions(hall: string) {
     setLoading(true);
     setError(false);
     try {
       const data = await fetchSessions(hall);
       setSessions(data);
-      const d = extractDays(data);
-      setDays(d);
-      setSelectedDay(prev => pickDay(d, prev));
+      onDaysLoaded(extractDays(data));
     } catch {
       setError(true);
       setSessions([]);
-      setDays([]);
+      onDaysLoaded([]);
     } finally {
       setLoading(false);
     }
@@ -129,19 +113,6 @@ export default function AgendaPage({onPlanChange, onSpeakerClick}: Props) {
 
   return (
     <Box>
-      {/* Day selector */}
-      <Stack direction="row" spacing={1} sx={{ px: 2, py: 1, overflowX: 'auto', flexWrap: 'nowrap' }}>
-        {days.map(day => (
-          <Chip
-            key={day}
-            label={formatDayLabel(day)}
-            color={selectedDay === day ? 'primary' : 'default'}
-            onClick={() => setSelectedDay(day)}
-            sx={{ flexShrink: 0 }}
-          />
-        ))}
-      </Stack>
-
       {/* Sentinel — crossing this triggers the "stuck" state */}
       <Box ref={sentinelRef} sx={{height: 0}}/>
 
