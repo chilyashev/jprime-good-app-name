@@ -8,6 +8,7 @@ import Link from '@mui/material/Link';
 import Tooltip from '@mui/material/Tooltip';
 import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import type {Session} from '../api/sessionsApi';
 import {addToPlan, isInPlan, removeFromPlan} from '../utils/visitPlan';
 
@@ -68,15 +69,17 @@ export default function SessionCard({session, isCurrent, showHall, onPlanChange,
               </Typography>
               {isCurrent && <Chip label="NOW" color="primary" size="small"/>}
             </Box>
+            <Box sx={{display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25}}>
+              <AccessTimeIcon sx={{fontSize: 14, color: isCurrent ? 'primary.main' : 'text.secondary'}}/>
+              <Typography variant="caption" color={isCurrent ? 'primary.main' : 'text.secondary'}>
+                {timeLabel}
+              </Typography>
+            </Box>
             {showHall && session.hallName && (
                 <Typography variant="caption" color="text.secondary">
                   {session.hallName}
                 </Typography>
             )}
-          </Box>
-          <Box sx={{flexShrink: 0, mt: 0.5}}>
-            <Chip label={timeLabel} color={isCurrent ? 'primary' : 'default'} size="small"
-                  variant={isCurrent ? 'filled' : 'outlined'}/>
           </Box>
         </Box>
 
