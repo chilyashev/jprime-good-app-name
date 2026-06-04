@@ -41,3 +41,45 @@ App is at **http://localhost:5173**. Vite proxies `/api/*` to the backend on `:8
 ```bash
 cd backend && ./mvnw test
 ```
+
+## Using for another conference
+
+All conference-specific values live in `backend/src/main/resources/application.yml`. Edit the `app` block:
+
+```yaml
+app:
+  import:
+    base-url: https://your-conference.io          # root URL of the conference site
+    conference-name: "Your Conference"
+    conference-year: 2027
+    logo-url: "https://your-conference.io/images/logo.png"
+    halls:
+      - "Main Hall"
+      - "Track 2"
+      - "Workshops"
+  conference:
+    venue-name: "Your Venue Name"
+    venue-address: "Street, City"
+    venue-map-url: "https://maps.google.com/maps?q=Your+Venue&output=embed"
+```
+
+Then rebuild and start:
+
+```bash
+docker compose up --build
+```
+
+Or, if the app is already running, trigger a re-import without restarting:
+
+```bash
+curl -X POST http://localhost:8080/api/import
+```
+
+### Data source compatibility
+
+The import client (`JprimeClient.java`) fetches sessions from `/pwa/findSessionsByHall` and scrapes speaker data from
+`/speakers` and `/speaker/{id}`. These endpoints match the CMS used by jprime.io.
+
+If your conference runs the same API, changing `base-url` is all you need. If the data is in a different format or comes
+from a different API, you'll need to reimplement `JprimeClient.java` to match - the rest of the app (database schema,
+REST API, frontend) is generic.
