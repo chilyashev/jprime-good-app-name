@@ -239,7 +239,7 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
                       iconPosition="start"
                       onClick={handleAgendaNavClick}
                     />
-                    <Tab icon={planBadge} label="My Plan" value="plan" iconPosition="start"/>
+                    <Tab icon={planBadge} label="My Schedule" value="plan" iconPosition="start"/>
                     <Tab icon={<MapIcon/>} label="Map" value="map" iconPosition="start"/>
                   </Tabs>
               )}
@@ -305,7 +305,7 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
               icon={<EventIcon />}
               onClick={handleAgendaNavClick}
             />
-            <BottomNavigationAction label="My Plan" value="plan" icon={planBadge}/>
+            <BottomNavigationAction label="My Schedule" value="plan" icon={planBadge}/>
             <BottomNavigationAction label="Map" value="map" icon={<MapIcon/>}/>
           </BottomNavigation>
         </Paper>

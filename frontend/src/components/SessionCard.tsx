@@ -130,11 +130,11 @@ export default function SessionCard({session, isCurrent, showHall, onPlanChange,
         )}
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-          <Tooltip title={saved ? 'Remove from plan' : 'Add to plan'}>
+            <Tooltip title={saved ? 'Remove from schedule' : 'Add to my schedule'}>
             <Box
                 component="button"
               onClick={toggle}
-              aria-label={saved ? 'Remove session from plan' : 'Add session to plan'}
+                aria-label={saved ? 'Remove session from schedule' : 'Add session to my schedule'}
                 sx={{
                   display: 'flex', alignItems: 'center', gap: 0.5,
                   background: 'none', border: 'none', cursor: 'pointer', p: 0.5, borderRadius: 1,
@@ -144,7 +144,7 @@ export default function SessionCard({session, isCurrent, showHall, onPlanChange,
             >
               {saved ? <BookmarkIcon fontSize="small"/> : <BookmarkAddIcon fontSize="small"/>}
               <Typography variant="caption" color="inherit">
-                {saved ? 'Added ✓' : 'Add to Plan'}
+                  {saved ? 'Added ✓' : 'Add to my schedule'}
               </Typography>
             </Box>
           </Tooltip>
