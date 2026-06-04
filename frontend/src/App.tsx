@@ -1,4 +1,5 @@
 import {useEffect, useMemo, useState} from 'react';
+import {Navigate, Route, Routes, useLocation, useNavigate, useParams} from 'react-router-dom';
 import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -34,7 +35,6 @@ import SpeakerPage from './pages/SpeakerPage';
 import {getPlanCount} from './utils/visitPlan';
 import {createAppTheme} from './theme';
 
-type Page = 'agenda' | 'plan' | 'map';
 type ThemeMode = 'light' | 'dark' | 'system';
 
 const THEME_KEY = 'jprime-theme-mode';
@@ -84,20 +84,43 @@ function ThemeToggle({mode, onChange}: { mode: ThemeMode; onChange: (m: ThemeMod
   );
 }
 
+interface SpeakerPageRouteProps {
+  onPlanChange: () => void;
+  onSpeakerClick: (id: number) => void;
+}
+
+function SpeakerPageRoute({onPlanChange, onSpeakerClick}: SpeakerPageRouteProps) {
+  const {speakerId} = useParams<{ speakerId: string }>();
+  const navigate = useNavigate();
+  return (
+      <SpeakerPage
+          speakerId={Number(speakerId)}
+          onBack={() => navigate(-1)}
+          onPlanChange={onPlanChange}
+          onSpeakerClick={(id) => navigate(`/speaker/${id}`)}
+      />
+  );
+}
+
 interface AppContentProps {
   themeMode: ThemeMode;
   onThemeModeChange: (m: ThemeMode) => void;
 }
 
 function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
-  const [page, setPage] = useState<Page>('agenda');
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [planCount, setPlanCount] = useState(() => getPlanCount());
-  const [selectedSpeakerId, setSelectedSpeakerId] = useState<number | null>(null);
-  const [previousPage, setPreviousPage] = useState<Page>('agenda');
   const [conference, setConference] = useState<ConferenceSettings | null>(null);
   const [days, setDays] = useState<string[]>([]);
   const [selectedDay, setSelectedDay] = useState('');
   const [agendaMenuAnchor, setAgendaMenuAnchor] = useState<HTMLElement | null>(null);
+
+  const isSpeakerPage = location.pathname.startsWith('/speaker/');
+  const page = location.pathname.startsWith('/plan') ? 'plan'
+      : location.pathname.startsWith('/map') ? 'map'
+          : 'agenda';
 
   useEffect(() => {
     fetchConferenceSettings().then(setConference).catch(() => {
@@ -117,18 +140,11 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
   }
 
   function handleSpeakerClick(speakerId: number) {
-    setPreviousPage(page);
-    setSelectedSpeakerId(speakerId);
+    navigate(`/speaker/${speakerId}`);
   }
 
-  function handleSpeakerBack() {
-    setSelectedSpeakerId(null);
-    setPage(previousPage);
-  }
-
-  function handlePageChange(newPage: Page) {
-    setSelectedSpeakerId(null);
-    setPage(newPage);
+  function handlePageChange(newPage: string) {
+    navigate(`/${newPage}`);
   }
 
   function handleDaysLoaded(loadedDays: string[]) {
@@ -137,7 +153,7 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
   }
 
   function handleAgendaNavClick(e: React.MouseEvent<HTMLElement>) {
-    handlePageChange('agenda');
+    navigate('/agenda');
     if (days.length > 0) setAgendaMenuAnchor(e.currentTarget);
   }
 
@@ -200,7 +216,7 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
           <AppBar position="sticky" color="default" elevation={1}>
           <Toolbar sx={{ justifyContent: 'space-between' }}>
             <Box sx={{display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer'}}
-                 onClick={() => handlePageChange('agenda')}>
+                 onClick={() => navigate('/agenda')}>
               {conference?.logoUrl && (
                   <img src={conference.logoUrl} alt="logo" style={{height: 32, width: 'auto'}}/>
               )}
@@ -209,7 +225,7 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
               </Typography>
             </Box>
             <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-              {!selectedSpeakerId && (
+              {!isSpeakerPage && (
                   <Tabs value={page} onChange={(_, v) => handlePageChange(v)}>
                     <Tab
                       icon={<EventIcon/>}
@@ -235,7 +251,7 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
         <AppBar position="static" color="default" elevation={1}>
           <Toolbar sx={{justifyContent: 'space-between'}}>
             <Box sx={{display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer'}}
-                 onClick={() => handlePageChange('agenda')}>
+                 onClick={() => navigate('/agenda')}>
               {conference?.logoUrl && (
                   <img src={conference.logoUrl} alt="logo" style={{height: 32, width: 'auto'}}/>
               )}
@@ -252,37 +268,35 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
 
       <Container maxWidth={isDesktop ? 'xl' : false} disableGutters={!isDesktop}
                  sx={{flex: 1, py: 0, pb: isDesktop ? 0 : 8}}>
-        {selectedSpeakerId !== null ? (
-            <SpeakerPage
-                speakerId={selectedSpeakerId}
-                onBack={handleSpeakerBack}
+        <Routes>
+          <Route path="/" element={<Navigate to="/agenda" replace/>}/>
+          <Route path="/agenda" element={
+            <AgendaPage
+                selectedDay={selectedDay}
+                onDaysLoaded={handleDaysLoaded}
                 onPlanChange={handlePlanChange}
                 onSpeakerClick={handleSpeakerClick}
             />
-        ) : (
-            <>
-              {page === 'agenda' && (
-                <AgendaPage
-                  selectedDay={selectedDay}
-                  onDaysLoaded={handleDaysLoaded}
-                  onPlanChange={handlePlanChange}
-                  onSpeakerClick={handleSpeakerClick}
-                />
-              )}
-              {page === 'plan' && (
-                  <PlanPage
-                      onGoToAgenda={() => handlePageChange('agenda')}
-                      planCount={planCount}
-                      onPlanChange={handlePlanChange}
-                      onSpeakerClick={handleSpeakerClick}
-                  />
-              )}
-              {page === 'map' && <MapPage/>}
-            </>
-        )}
+          }/>
+          <Route path="/plan" element={
+            <PlanPage
+                onGoToAgenda={() => navigate('/agenda')}
+                planCount={planCount}
+                onPlanChange={handlePlanChange}
+                onSpeakerClick={handleSpeakerClick}
+            />
+          }/>
+          <Route path="/map" element={<MapPage/>}/>
+          <Route path="/speaker/:speakerId" element={
+            <SpeakerPageRoute
+                onPlanChange={handlePlanChange}
+                onSpeakerClick={handleSpeakerClick}
+            />
+          }/>
+        </Routes>
       </Container>
 
-      {!isDesktop && !selectedSpeakerId && (
+      {!isDesktop && !isSpeakerPage && (
         <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
           <BottomNavigation value={page} onChange={(_, v) => handlePageChange(v)} showLabels>
             <BottomNavigationAction
