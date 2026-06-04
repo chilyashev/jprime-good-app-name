@@ -98,6 +98,21 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
     setPlanCount(getPlanCount());
   }
 
+  function handleSpeakerClick(speakerId: number) {
+    setPreviousPage(page);
+    setSelectedSpeakerId(speakerId);
+  }
+
+  function handleSpeakerBack() {
+    setSelectedSpeakerId(null);
+    setPage(previousPage);
+  }
+
+  function handlePageChange(newPage: Page) {
+    setSelectedSpeakerId(null);
+    setPage(newPage);
+  }
+
   const planBadge = planCount > 0 ? (
     <Badge badgeContent={planCount} color="primary">
       <EventNoteIcon />
@@ -148,16 +163,30 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
       )}
 
       <Container maxWidth={isDesktop ? 'xl' : 'sm'} sx={{ flex: 1, py: 0, pb: isDesktop ? 0 : 8 }}>
-        {page === 'agenda' && <AgendaPage onPlanChange={handlePlanChange} />}
-        {page === 'plan' && (
-          <PlanPage
-            onGoToAgenda={() => setPage('agenda')}
-            planCount={planCount}
-          />
+        {selectedSpeakerId !== null ? (
+            <SpeakerPage
+                speakerId={selectedSpeakerId}
+                onBack={handleSpeakerBack}
+                onPlanChange={handlePlanChange}
+                onSpeakerClick={handleSpeakerClick}
+            />
+        ) : (
+            <>
+              {page === 'agenda' && <AgendaPage onPlanChange={handlePlanChange} onSpeakerClick={handleSpeakerClick}/>}
+              {page === 'plan' && (
+                  <PlanPage
+                      onGoToAgenda={() => handlePageChange('agenda')}
+                      planCount={planCount}
+                      onPlanChange={handlePlanChange}
+                      onSpeakerClick={handleSpeakerClick}
+                  />
+              )}
+              {page === 'map' && <MapPage/>}
+            </>
         )}
       </Container>
 
-      {!isDesktop && (
+      {!isDesktop && !selectedSpeakerId && (
         <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
           <BottomNavigation value={page} onChange={(_, v) => handlePageChange(v)} showLabels>
             <BottomNavigationAction label="Agenda" value="agenda" icon={<EventIcon />} />

@@ -1,6 +1,7 @@
 package com.jprime.companion.repository;
 
 import com.jprime.companion.entity.Session;
+import com.jprime.companion.entity.Speaker;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -29,4 +30,6 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
 
     @Query("SELECT s FROM Session s LEFT JOIN s.hall h WHERE (h.name = :hallName OR s.hall IS NULL) AND s.startTime >= :dayStart AND s.startTime < :dayEnd ORDER BY s.startTime")
     List<Session> findByHallNameAndDay(@Param("hallName") String hallName, @Param("dayStart") LocalDateTime dayStart, @Param("dayEnd") LocalDateTime dayEnd);
+
+    List<Session> findBySpeakersContaining(Speaker speaker);
 }

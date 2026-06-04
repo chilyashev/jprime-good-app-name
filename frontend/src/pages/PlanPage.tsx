@@ -1,20 +1,32 @@
-import { useState, useEffect } from 'react';
+import {useEffect, useState} from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import SessionCard from '../components/SessionCard';
-import { fetchSessions, type Session } from '../api/sessionsApi';
-import { getPlanIds } from '../utils/visitPlan';
+import {fetchSessions, type Session} from '../api/sessionsApi';
+import {getPlanIds} from '../utils/visitPlan';
 
 interface Props {
   onGoToAgenda: () => void;
   planCount: number;
+  onPlanChange?: () => void;
+  onSpeakerClick?: (speakerId: number) => void;
 }
 
-export default function PlanPage({ onGoToAgenda, planCount }: Props) {
+function isHappeningNow(session: Session, now: Date): boolean {
+  return new Date(session.startTime) <= now && now < new Date(session.endTime);
+}
+
+export default function PlanPage({onGoToAgenda, planCount, onPlanChange, onSpeakerClick}: Props) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   async function loadPlan() {
     const ids = getPlanIds();
@@ -64,7 +76,10 @@ export default function PlanPage({ onGoToAgenda, planCount }: Props) {
         {sessions.length} session{sessions.length !== 1 ? 's' : ''} saved
       </Typography>
       {sessions.map(s => (
-        <SessionCard key={s.id} session={s} onPlanChange={loadPlan} />
+          <SessionCard key={s.id} session={s} isCurrent={isHappeningNow(s, now)} onPlanChange={() => {
+            loadPlan();
+            onPlanChange?.();
+          }} onSpeakerClick={onSpeakerClick}/>
       ))}
     </Box>
   );

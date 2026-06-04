@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import {useEffect, useRef, useState} from 'react';
 import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -9,7 +9,13 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import SessionCard from '../components/SessionCard';
-import { fetchSessions, triggerImport, type Session } from '../api/sessionsApi';
+import {fetchSessions, type Session, triggerImport} from '../api/sessionsApi';
+
+function localNow(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
 
 function formatDayLabel(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
@@ -23,18 +29,42 @@ function extractDays(sessions: Session[]): string[] {
 
 interface Props {
   onPlanChange: () => void;
+  onSpeakerClick: (speakerId: number) => void;
 }
 
-export default function AgendaPage({ onPlanChange }: Props) {
+export default function AgendaPage({onPlanChange, onSpeakerClick}: Props) {
   const halls = ['hall A', 'hall B', 'workshops'];
   const [selectedHall, setSelectedHall] = useState(0);
+  const [tabsStuck, setTabsStuck] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [days, setDays] = useState<string[]>([]);
   const [selectedDay, setSelectedDay] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [now, setNow] = useState(() => localNow());
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentCardRef = useRef<HTMLDivElement>(null);
+  const [currentCardVisible, setCurrentCardVisible] = useState(true);
 
   const today = new Date().toISOString().slice(0, 10);
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      setNow(localNow());
+    }, 30_000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => setTabsStuck(!entry.isIntersecting), {threshold: 0});
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   function pickDay(available: string[], prev: string): string {
     if (prev && available.includes(prev)) return prev;
@@ -73,6 +103,26 @@ export default function AgendaPage({ onPlanChange }: Props) {
   const visibleSessions = selectedDay
     ? sessions.filter(s => s.startTime.startsWith(selectedDay))
     : sessions;
+
+  const currentSession = visibleSessions.find(
+      s => s.startTime.slice(0, 19) <= now && s.endTime.slice(0, 19) > now
+  );
+
+  useEffect(() => {
+    setCurrentCardVisible(true);
+    const el = currentCardRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+        ([entry]) => setCurrentCardVisible(entry.isIntersecting),
+        {threshold: 0.1}
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [currentSession?.id]);
+
+  function scrollToCurrent() {
+    currentCardRef.current?.scrollIntoView({behavior: 'smooth', block: 'center'});
+  }
 
   return (
     <Box>
@@ -139,10 +189,32 @@ export default function AgendaPage({ onPlanChange }: Props) {
               <Button variant="outlined" onClick={handleRetry}>Retry</Button>
             </Box>
           )}
-          {visibleSessions.map(s => (
-            <SessionCard key={s.id} session={s} onPlanChange={onPlanChange} />
-          ))}
+          {visibleSessions.map(s => {
+            const isCurrent = s.startTime.slice(0, 19) <= now && s.endTime.slice(0, 19) > now;
+            return isCurrent ? (
+                <div key={s.id} ref={currentCardRef}>
+                  <SessionCard session={s} isCurrent onPlanChange={onPlanChange} onSpeakerClick={onSpeakerClick}/>
+                </div>
+            ) : (
+                <SessionCard key={s.id} session={s} isCurrent={false} onPlanChange={onPlanChange}
+                             onSpeakerClick={onSpeakerClick}/>
+            );
+          })}
         </Box>
+      )}
+
+      {currentSession && !currentCardVisible && (
+          <Tooltip title="Jump to current talk" placement="left">
+            <Fab
+                color="primary"
+                size="small"
+                onClick={scrollToCurrent}
+                aria-label="Jump to current talk"
+                sx={{position: 'fixed', bottom: {xs: 72, md: 24}, right: 16, zIndex: 1200}}
+            >
+              <PlayArrowIcon/>
+            </Fab>
+          </Tooltip>
       )}
     </Box>
   );

@@ -1,3 +1,8 @@
+export interface Speaker {
+  id: number;
+  name: string;
+}
+
 export interface Session {
   id: number;
   hallName: string | null;
@@ -7,6 +12,7 @@ export interface Session {
   talkDescription: string | null;
   startTime: string;
   endTime: string;
+  speakers: Speaker[];
 }
 
 export async function fetchSessions(hall?: string, day?: string): Promise<Session[]> {

@@ -15,12 +15,17 @@ function formatTime(dt: string): string {
   return dt.slice(11, 16);
 }
 
+const TRUNCATE_AT = 256;
+
 interface Props {
   session: Session;
+  isCurrent?: boolean;
+  showHall?: boolean;
   onPlanChange?: () => void;
+  onSpeakerClick?: (speakerId: number) => void;
 }
 
-export default function SessionCard({ session, onPlanChange }: Props) {
+export default function SessionCard({session, isCurrent, showHall, onPlanChange, onSpeakerClick}: Props) {
   const [saved, setSaved] = useState(() => isInPlan(session.id));
   const [expanded, setExpanded] = useState(false);
 
@@ -35,39 +40,89 @@ export default function SessionCard({ session, onPlanChange }: Props) {
   }
 
   const timeLabel = `${formatTime(session.startTime)}–${formatTime(session.endTime)}`;
-  const speakers = [session.lectorName, session.coLectorName].filter(Boolean).join(', ');
+
+  const speakers = session.speakers ?? [];
+  const hasSpeakers = speakers.length > 0;
+  const fallbackSpeakers = !hasSpeakers
+      ? [session.lectorName, session.coLectorName].filter(Boolean).join(', ')
+      : '';
+
+  const desc = session.talkDescription;
+  const isLong = !!desc && desc.length > TRUNCATE_AT;
 
   return (
-    <Card sx={{ mb: 1 }}>
+      <Card sx={{
+        mb: 1,
+        ...(isCurrent && {
+          borderLeft: '3px solid',
+          borderColor: 'primary.main',
+          bgcolor: 'rgba(98,0,234,0.12)',
+        }),
+      }}>
       <CardContent sx={{ pb: '12px !important' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
-          <Typography variant="h6" component="div" sx={{ fontWeight: 700, flex: 1 }}>
-            {session.title ?? '(Untitled)'}
-          </Typography>
-          <Chip label={timeLabel} color="primary" size="small" sx={{ flexShrink: 0, mt: 0.5 }} />
+          <Box sx={{flex: 1}}>
+            <Box sx={{display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap'}}>
+              <Typography variant="h6" component="div" sx={{fontWeight: 700}}>
+                {session.title ?? '(Untitled)'}
+              </Typography>
+              {isCurrent && <Chip label="NOW" color="primary" size="small"/>}
+            </Box>
+            {showHall && session.hallName && (
+                <Typography variant="caption" color="text.secondary">
+                  {session.hallName}
+                </Typography>
+            )}
+          </Box>
+          <Box sx={{flexShrink: 0, mt: 0.5}}>
+            <Chip label={timeLabel} color={isCurrent ? 'primary' : 'default'} size="small"
+                  variant={isCurrent ? 'filled' : 'outlined'}/>
+          </Box>
         </Box>
 
-        {speakers && (
+        {hasSpeakers && (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {speakers}
+            {speakers.map((sp, i) => (
+                <span key={sp.id}>
+                {i > 0 && ', '}
+                  {onSpeakerClick ? (
+                      <Link
+                          component="button"
+                          variant="body2"
+                          onClick={() => onSpeakerClick(sp.id)}
+                          sx={{verticalAlign: 'baseline'}}
+                      >
+                        {sp.name}
+                      </Link>
+                  ) : (
+                      sp.name
+                  )}
+              </span>
+            ))}
           </Typography>
         )}
 
-        {session.talkDescription && (
+        {!hasSpeakers && fallbackSpeakers && (
+            <Typography variant="body2" color="text.secondary" sx={{mt: 0.5}}>
+              {fallbackSpeakers}
+          </Typography>
+        )}
+
+        {desc && (
           <>
-            <Link
-              component="button"
-              variant="caption"
-              onClick={() => setExpanded(e => !e)}
-              sx={{ mt: 0.5, display: 'block', textAlign: 'left' }}
-            >
-              {expanded ? 'Show less' : 'Read more'}
-            </Link>
-            <Collapse in={expanded}>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                {session.talkDescription}
-              </Typography>
-            </Collapse>
+            <Typography variant="body2" color="text.secondary" sx={{mt: 0.5}}>
+              {isLong && !expanded ? desc.slice(0, TRUNCATE_AT) + '…' : desc}
+            </Typography>
+            {isLong && (
+                <Link
+                    component="button"
+                    variant="caption"
+                    onClick={() => setExpanded(e => !e)}
+                    sx={{display: 'block', textAlign: 'left', mt: 0.25}}
+                >
+                  {expanded ? 'Show less' : 'Show more'}
+                </Link>
+            )}
           </>
         )}
 

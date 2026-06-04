@@ -11,14 +11,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import org.mockito.quality.Strictness;
-import org.mockito.junit.jupiter.MockitoSettings;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -65,31 +65,31 @@ class ImportServiceTest {
     void givenAllHallsSucceed_whenImportAll_thenImportsAllHalls() {
         importService.importAll();
 
-        verify(hallImportExecutor).importHall("hall A", hallA);
-        verify(hallImportExecutor).importHall("hall B", hallB);
-        verify(hallImportExecutor).importHall("workshops", workshops);
-        verify(hallImportExecutor).importHall(null, null);
+        verify(hallImportExecutor).importHall("hall A", hallA, conference);
+        verify(hallImportExecutor).importHall("hall B", hallB, conference);
+        verify(hallImportExecutor).importHall("workshops", workshops, conference);
+        verify(hallImportExecutor).importHall(null, null, conference);
     }
 
     @Test
     void givenHallBThrows_afterRetries_otherHallsStillImport() {
-        doThrow(new RuntimeException("timeout")).when(hallImportExecutor).importHall(eq("hall B"), any());
+        doThrow(new RuntimeException("timeout")).when(hallImportExecutor).importHall(eq("hall B"), any(), any());
 
         importService.importAll();
 
-        verify(hallImportExecutor).importHall("hall A", hallA);
-        verify(hallImportExecutor).importHall("workshops", workshops);
-        verify(hallImportExecutor).importHall(null, null);
+        verify(hallImportExecutor).importHall("hall A", hallA, conference);
+        verify(hallImportExecutor).importHall("workshops", workshops, conference);
+        verify(hallImportExecutor).importHall(null, null, conference);
     }
 
     @Test
     void givenSharedCallThrows_whenImportAll_thenHallsStillImport() {
-        doThrow(new RuntimeException("network error")).when(hallImportExecutor).importHall(isNull(), isNull());
+        doThrow(new RuntimeException("network error")).when(hallImportExecutor).importHall(isNull(), isNull(), any());
 
         importService.importAll();
 
-        verify(hallImportExecutor).importHall("hall A", hallA);
-        verify(hallImportExecutor).importHall("hall B", hallB);
-        verify(hallImportExecutor).importHall("workshops", workshops);
+        verify(hallImportExecutor).importHall("hall A", hallA, conference);
+        verify(hallImportExecutor).importHall("hall B", hallB, conference);
+        verify(hallImportExecutor).importHall("workshops", workshops, conference);
     }
 }
