@@ -1,0 +1,30 @@
+# Java / Maven (backend)
+target/
+*.class
+*.jar
+*.war
+.classpath
+.project
+.settings/
+spring-shell.log
+backend/target
+
+# Node / Vite (frontend — detailed rules live in frontend/.gitignore)
+node_modules/
+dist/
+*.local
+
+# IDE / editors
+.idea/
+.vscode/
+*.suo
+*.sw?
+.DS_Store
+
+# Tooling state
+.gstack/
+.claude/
+
+# Specs directory
+.spec/
+

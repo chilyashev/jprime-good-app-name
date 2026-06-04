@@ -1,0 +1,16 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/jprime}
+    username: jprime
+    password: jprime
+
+app:
+  import:
+    base-url: https://jprime.io
+    halls:
+      - "hall A"
+      - "hall B"
+      - "workshops"
