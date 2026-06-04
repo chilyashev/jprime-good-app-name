@@ -197,7 +197,7 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
       {isDesktop ? (
-        <AppBar position="static" color="default" elevation={1}>
+          <AppBar position="sticky" color="default" elevation={1}>
           <Toolbar sx={{ justifyContent: 'space-between' }}>
             <Box sx={{display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer'}}
                  onClick={() => handlePageChange('agenda')}>
@@ -250,7 +250,8 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
 
       {dayMenu}
 
-      <Container maxWidth={isDesktop ? 'xl' : 'sm'} sx={{ flex: 1, py: 0, pb: isDesktop ? 0 : 8 }}>
+      <Container maxWidth={isDesktop ? 'xl' : false} disableGutters={!isDesktop}
+                 sx={{flex: 1, py: 0, pb: isDesktop ? 0 : 8}}>
         {selectedSpeakerId !== null ? (
             <SpeakerPage
                 speakerId={selectedSpeakerId}
