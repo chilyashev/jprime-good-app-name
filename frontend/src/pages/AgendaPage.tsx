@@ -89,12 +89,22 @@ export default function AgendaPage({ onPlanChange }: Props) {
         ))}
       </Stack>
 
+      {/* Sentinel — crossing this triggers the "stuck" state */}
+      <Box ref={sentinelRef} sx={{height: 0}}/>
+
       {/* Hall tabs */}
       <Tabs
         value={selectedHall}
         onChange={(_, v) => setSelectedHall(v)}
         variant="fullWidth"
-        sx={{ borderBottom: 1, borderColor: 'divider' }}
+        sx={{
+          borderBottom: 1, borderColor: 'divider',
+          position: {xs: 'sticky', md: 'static'},
+          top: 0,
+          zIndex: 10,
+          bgcolor: 'background.paper',
+          '& .MuiTab-root': {fontSize: tabsStuck ? '0.72rem' : undefined},
+        }}
       >
         {halls.map((h, i) => (
           <Tab key={h} label={h.replace(/^\w/, c => c.toUpperCase())} id={`hall-tab-${i}`} />

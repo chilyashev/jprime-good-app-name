@@ -28,6 +28,7 @@ public class ImportService {
                     Conference c = new Conference();
                     c.setName("jPrime");
                     c.setYear(2026);
+                    c.setLogoUrl("https://jprime.io/images/jprime-small.png");
                     return conferenceRepository.save(c);
                 });
 

@@ -1,17 +1,15 @@
-import { useState } from 'react';
+import {useState} from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
-import Collapse from '@mui/material/Collapse';
 import Link from '@mui/material/Link';
-import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
-import type { Session } from '../api/sessionsApi';
-import { isInPlan, addToPlan, removeFromPlan } from '../utils/visitPlan';
+import type {Session} from '../api/sessionsApi';
+import {addToPlan, isInPlan, removeFromPlan} from '../utils/visitPlan';
 
 function formatTime(dt: string): string {
   return dt.slice(11, 16);
@@ -75,22 +73,23 @@ export default function SessionCard({ session, onPlanChange }: Props) {
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
           <Tooltip title={saved ? 'Remove from plan' : 'Add to plan'}>
-            <IconButton
+            <Box
+                component="button"
               onClick={toggle}
-              color={saved ? 'success' : 'default'}
               aria-label={saved ? 'Remove session from plan' : 'Add session to plan'}
-              size="small"
+                sx={{
+                  display: 'flex', alignItems: 'center', gap: 0.5,
+                  background: 'none', border: 'none', cursor: 'pointer', p: 0.5, borderRadius: 1,
+                  color: saved ? 'success.main' : 'text.secondary',
+                  '&:hover': {bgcolor: 'action.hover'},
+                }}
             >
-              {saved ? <BookmarkIcon /> : <BookmarkAddIcon />}
-            </IconButton>
+              {saved ? <BookmarkIcon fontSize="small"/> : <BookmarkAddIcon fontSize="small"/>}
+              <Typography variant="caption" color="inherit">
+                {saved ? 'Added ✓' : 'Add to Plan'}
+              </Typography>
+            </Box>
           </Tooltip>
-          <Typography
-            variant="caption"
-            color={saved ? 'success.main' : 'text.secondary'}
-            sx={{ alignSelf: 'center', ml: 0.5 }}
-          >
-            {saved ? 'Added ✓' : 'Add to Plan'}
-          </Typography>
         </Box>
       </CardContent>
     </Card>

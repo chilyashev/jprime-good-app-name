@@ -108,6 +108,7 @@ export default function SpeakerPage({speakerId, onBack, onPlanChange, onSpeakerC
                             key={s.id}
                             session={s}
                             isCurrent={s.startTime.slice(0, 19) <= now && s.endTime.slice(0, 19) > now}
+                            showHall
                             onPlanChange={onPlanChange}
                             onSpeakerClick={onSpeakerClick}
                         />

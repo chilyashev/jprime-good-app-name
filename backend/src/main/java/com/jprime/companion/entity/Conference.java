@@ -17,4 +17,7 @@ public class Conference {
 
     @Column(name = "conference_year", nullable = false)
     private Integer year;
+
+    @Column(name = "logo_url")
+    private String logoUrl;
 }

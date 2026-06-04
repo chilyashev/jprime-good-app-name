@@ -14,6 +14,17 @@ export default function MapPage() {
                     </Typography>
                 </Box>
             </Box>
+            <Typography>
+                TODO: Add an awesome map of the venue.
+            </Typography>
+            <Box sx={{px: 2, pb: 1, display: 'flex', justifyContent: {xs: 'flex-start', md: 'center'}}}>
+                <Box
+                    component="img"
+                    src="/doom_map.jpg"
+                    alt="Venue map"
+                    sx={{width: {xs: '100%', md: '50%'}, borderRadius: 2, display: 'block'}}
+                />
+            </Box>
             <Box sx={{flex: 1, px: 2, pb: 2}}>
                 <iframe
                     title="jPrime venue map"
