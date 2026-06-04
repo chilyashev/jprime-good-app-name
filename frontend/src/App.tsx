@@ -286,7 +286,7 @@ function AppContent({themeMode, onThemeModeChange}: AppContentProps) {
                 onSpeakerClick={handleSpeakerClick}
             />
           }/>
-          <Route path="/map" element={<MapPage/>}/>
+          <Route path="/map" element={<MapPage conference={conference}/>}/>
           <Route path="/speaker/:speakerId" element={
             <SpeakerPageRoute
                 onPlanChange={handlePlanChange}

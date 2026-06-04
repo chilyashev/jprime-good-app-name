@@ -14,3 +14,10 @@ app:
       - "hall A"
       - "hall B"
       - "workshops"
+    conference-name: "jPrime"
+    conference-year: 2026
+    logo-url: "https://jprime.io/images/jprime-small.png"
+  conference:
+    venue-name: "jPrime 2026 Venue"
+    venue-address: "Inter Expo Center Sofia · Tsarigradsko Shose Blvd 147, Sofia"
+    venue-map-url: "https://maps.google.com/maps?q=Inter+Expo+Center+Sofia+Bulgaria&output=embed"

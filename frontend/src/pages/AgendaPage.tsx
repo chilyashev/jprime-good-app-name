@@ -11,9 +11,7 @@ import {useMediaQuery, useTheme} from '@mui/material';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import SessionCard from '../components/SessionCard';
-import {fetchSessions, type Session, triggerImport} from '../api/sessionsApi';
-
-const HALLS = ['hall A', 'hall B', 'workshops'];
+import {fetchHalls, fetchSessions, type Session, triggerImport} from '../api/sessionsApi';
 
 // ─── Time grid constants ─────────────────────────────────────────────────────
 const MINUTES_PER_ROW = 5;
@@ -51,7 +49,7 @@ interface GridItem {
   rowEnd: number;
 }
 
-function buildGridItems(filtered: Record<string, Session[]>, dayStartMin: number): GridItem[] {
+function buildGridItems(filtered: Record<string, Session[]>, dayStartMin: number, halls: string[]): GridItem[] {
   const items: GridItem[] = [];
 
   function toRow(dt: string): number {
@@ -59,7 +57,7 @@ function buildGridItems(filtered: Record<string, Session[]>, dayStartMin: number
   }
 
   // Hall-specific sessions — one column each
-  HALLS.forEach((hall, i) => {
+  halls.forEach((hall, i) => {
     (filtered[hall] ?? [])
         .filter(s => s.hallName === hall)
         .forEach(s => {
@@ -77,7 +75,7 @@ function buildGridItems(filtered: Record<string, Session[]>, dayStartMin: number
   // that don't already have a conflicting regular session at the same time.
   const seen = new Set<number>();
   const shared: Session[] = [];
-  HALLS.forEach(h => {
+  halls.forEach(h => {
     (filtered[h] ?? []).filter(s => s.hallName === null).forEach(s => {
       if (!seen.has(s.id)) {
         seen.add(s.id);
@@ -89,7 +87,7 @@ function buildGridItems(filtered: Record<string, Session[]>, dayStartMin: number
   shared.forEach(s => {
     // Which hall indices have a regular session that overlaps this shared one?
     const conflict = new Set(
-        HALLS.map((hall, i) => {
+        halls.map((hall, i) => {
           const regular = (filtered[hall] ?? []).filter(r => r.hallName === hall);
           return regular.some(r => sessionsOverlap(r, s)) ? i : -1;
         }).filter(i => i >= 0),
@@ -97,8 +95,8 @@ function buildGridItems(filtered: Record<string, Session[]>, dayStartMin: number
 
     // Walk the hall list and emit one grid item per consecutive run of free columns.
     let spanStart: number | null = null;
-    for (let i = 0; i <= HALLS.length; i++) {
-      const free = i < HALLS.length && !conflict.has(i);
+    for (let i = 0; i <= halls.length; i++) {
+      const free = i < halls.length && !conflict.has(i);
       if (free && spanStart === null) {
         spanStart = i;
       } else if (!free && spanStart !== null) {
@@ -120,6 +118,7 @@ function buildGridItems(filtered: Record<string, Session[]>, dayStartMin: number
 // ─── Desktop grid ────────────────────────────────────────────────────────────
 
 interface DesktopScheduleGridProps {
+  halls: string[];
   selectedDay: string;
   now: string;
   onDaysLoaded: (days: string[]) => void;
@@ -127,7 +126,14 @@ interface DesktopScheduleGridProps {
   onSpeakerClick: (speakerId: number) => void;
 }
 
-function DesktopScheduleGrid({selectedDay, now, onDaysLoaded, onPlanChange, onSpeakerClick}: DesktopScheduleGridProps) {
+function DesktopScheduleGrid({
+                               halls,
+                               selectedDay,
+                               now,
+                               onDaysLoaded,
+                               onPlanChange,
+                               onSpeakerClick
+                             }: DesktopScheduleGridProps) {
   const [hallData, setHallData] = useState<Record<string, Session[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -136,10 +142,10 @@ function DesktopScheduleGrid({selectedDay, now, onDaysLoaded, onPlanChange, onSp
     setLoading(true);
     setError(false);
     try {
-      const results = await Promise.allSettled(HALLS.map(h => fetchSessions(h)));
+      const results = await Promise.allSettled(halls.map(h => fetchSessions(h)));
       const map: Record<string, Session[]> = {};
       results.forEach((r, i) => {
-        map[HALLS[i]] = r.status === 'fulfilled' ? r.value : [];
+        map[halls[i]] = r.status === 'fulfilled' ? r.value : [];
       });
       setHallData(map);
       onDaysLoaded(extractDays(Object.values(map).flat()));
@@ -151,8 +157,8 @@ function DesktopScheduleGrid({selectedDay, now, onDaysLoaded, onPlanChange, onSp
   }
 
   useEffect(() => {
-    loadAll();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (halls.length > 0) loadAll();
+  }, [halls.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleRetry() {
     try {
@@ -164,12 +170,12 @@ function DesktopScheduleGrid({selectedDay, now, onDaysLoaded, onPlanChange, onSp
 
   // Filter each hall by selected day
   const filtered: Record<string, Session[]> = {};
-  for (const hall of HALLS) {
+  for (const hall of halls) {
     const all = hallData[hall] ?? [];
     filtered[hall] = selectedDay ? all.filter(s => s.startTime.startsWith(selectedDay)) : all;
   }
 
-  const allFiltered = HALLS.flatMap(h => filtered[h]);
+  const allFiltered = halls.flatMap(h => filtered[h]);
 
   if (loading) {
     return <Box sx={{display: 'flex', justifyContent: 'center', pt: 6}}><CircularProgress/></Box>;
@@ -189,12 +195,12 @@ function DesktopScheduleGrid({selectedDay, now, onDaysLoaded, onPlanChange, onSp
     return (
         <Box sx={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateColumns: `repeat(${halls.length}, 1fr)`,
           borderTop: 1,
           borderLeft: 1,
           borderColor: 'divider'
         }}>
-          {HALLS.map((hall, i) => (
+          {halls.map((hall, i) => (
               <Typography key={hall} variant="subtitle1" sx={{
                 px: 2, py: 1.5, fontWeight: 700, borderBottom: 1, borderRight: 1, borderColor: 'divider',
                 bgcolor: 'background.paper', position: 'sticky', top: '64px', zIndex: 9, textAlign: 'center',
@@ -202,7 +208,7 @@ function DesktopScheduleGrid({selectedDay, now, onDaysLoaded, onPlanChange, onSp
                 {hall.replace(/^\w/, c => c.toUpperCase())}
               </Typography>
           ))}
-          {HALLS.map(hall => (
+          {halls.map(hall => (
               <Box key={hall} sx={{textAlign: 'center', pt: 4, borderRight: 1, borderColor: 'divider'}}>
                 <Typography variant="body2" color="text.secondary">No sessions for this day</Typography>
               </Box>
@@ -213,16 +219,13 @@ function DesktopScheduleGrid({selectedDay, now, onDaysLoaded, onPlanChange, onSp
 
   const dayStartMin = Math.min(...allFiltered.map(s => dtToMinutes(s.startTime)));
 
-  const gridItems = buildGridItems(filtered, dayStartMin);
+  const gridItems = buildGridItems(filtered, dayStartMin, halls);
 
   return (
       <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            // Row 1 = sticky column headers (explicit, auto height).
-            // Rows 2+ = implicit time-slot rows: each is at least ROW_HEIGHT px but
-            // expands to fit card content so descriptions are never clipped.
+            gridTemplateColumns: `repeat(${halls.length}, 1fr)`,
             gridTemplateRows: 'auto',
             gridAutoRows: `minmax(${ROW_HEIGHT}px, auto)`,
             borderTop: 1,
@@ -231,7 +234,7 @@ function DesktopScheduleGrid({selectedDay, now, onDaysLoaded, onPlanChange, onSp
           }}
       >
         {/* Sticky column headers — row 1 */}
-        {HALLS.map((hall, i) => (
+        {halls.map((hall, i) => (
             <Typography
                 key={hall}
                 variant="subtitle1"
@@ -258,7 +261,7 @@ function DesktopScheduleGrid({selectedDay, now, onDaysLoaded, onPlanChange, onSp
         {gridItems.map(({session, colStart, colEnd, rowStart, rowEnd}) => {
           const isCurrent = session.startTime.slice(0, 19) <= now && session.endTime.slice(0, 19) > now;
           // Show right border only if the item doesn't reach the last column
-          const hasRightBorder = colEnd <= HALLS.length;
+          const hasRightBorder = colEnd <= halls.length;
           return (
               <Box
                   key={`${session.id}-${colStart}`}
@@ -293,6 +296,7 @@ interface Props {
 }
 
 export default function AgendaPage({selectedDay, onDaysLoaded, onPlanChange, onSpeakerClick}: Props) {
+  const [halls, setHalls] = useState<string[]>([]);
   const [selectedHall, setSelectedHall] = useState(0);
   const [tabsStuck, setTabsStuck] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -306,6 +310,10 @@ export default function AgendaPage({selectedDay, onDaysLoaded, onPlanChange, onS
 
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+
+  useEffect(() => {
+    fetchHalls().then(setHalls).catch(() => setHalls([]));
+  }, []);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => setNow(localNow()), 30_000);
@@ -341,15 +349,15 @@ export default function AgendaPage({selectedDay, onDaysLoaded, onPlanChange, onS
   }
 
   useEffect(() => {
-    if (!isDesktop) loadSessions(HALLS[selectedHall]);
-  }, [selectedHall, isDesktop]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!isDesktop && halls.length > 0) loadSessions(halls[selectedHall]);
+  }, [selectedHall, isDesktop, halls]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleRetry() {
     try {
       await triggerImport();
     } catch { /* ignore */
     }
-    loadSessions(HALLS[selectedHall]);
+    if (halls.length > 0) loadSessions(halls[selectedHall]);
   }
 
   const visibleSessions = selectedDay
@@ -378,6 +386,7 @@ export default function AgendaPage({selectedDay, onDaysLoaded, onPlanChange, onS
   if (isDesktop) {
     return (
         <DesktopScheduleGrid
+            halls={halls}
             selectedDay={selectedDay}
             now={now}
             onDaysLoaded={onDaysLoaded}
@@ -402,7 +411,7 @@ export default function AgendaPage({selectedDay, onDaysLoaded, onPlanChange, onS
           '& .MuiTab-root': {fontSize: tabsStuck ? '0.72rem' : undefined},
         }}
       >
-        {HALLS.map((h, i) => (
+        {halls.map((h, i) => (
           <Tab key={h} label={h.replace(/^\w/, c => c.toUpperCase())} id={`hall-tab-${i}`} />
         ))}
       </Tabs>

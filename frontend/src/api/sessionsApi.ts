@@ -25,10 +25,19 @@ export async function fetchSessions(hall?: string, day?: string): Promise<Sessio
   return res.json();
 }
 
-export async function fetchHalls(): Promise<string[]> {
-  const res = await fetch('/api/halls');
-  if (!res.ok) throw new Error('Failed to fetch halls');
-  return res.json();
+let hallsPromise: Promise<string[]> | null = null;
+
+export function fetchHalls(): Promise<string[]> {
+    if (!hallsPromise) {
+        hallsPromise = fetch('/api/halls').then(res => {
+            if (!res.ok) {
+                hallsPromise = null;
+                throw new Error('Failed to fetch halls');
+            }
+            return res.json();
+        });
+    }
+    return hallsPromise;
 }
 
 export async function triggerImport(): Promise<void> {

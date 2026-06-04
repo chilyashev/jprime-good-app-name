@@ -1,17 +1,27 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import Skeleton from '@mui/material/Skeleton';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import {type ConferenceSettings} from '../api/conferenceApi';
 
-export default function MapPage() {
+interface Props {
+    conference: ConferenceSettings | null;
+}
+
+export default function MapPage({conference}: Props) {
     return (
         <Box sx={{display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)'}}>
             <Box sx={{display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 1.5}}>
                 <LocationOnIcon color="primary"/>
                 <Box>
-                    <Typography variant="subtitle1" sx={{fontWeight: 700}}>jPrime 2026 Venue</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                        Inter Expo Center Sofia · Tsarigradsko Shose Blvd 147, Sofia
-                    </Typography>
+                    {conference
+                        ? <Typography variant="subtitle1" sx={{fontWeight: 700}}>{conference.venueName}</Typography>
+                        : <Skeleton width={180} height={24}/>
+                    }
+                    {conference
+                        ? <Typography variant="caption" color="text.secondary">{conference.venueAddress}</Typography>
+                        : <Skeleton width={280} height={16}/>
+                    }
                 </Box>
             </Box>
             <Typography>
@@ -26,16 +36,18 @@ export default function MapPage() {
                 />
             </Box>
             <Box sx={{flex: 1, px: 2, pb: 2}}>
-                <iframe
-                    title="jPrime venue map"
-                    src="https://maps.google.com/maps?q=Inter+Expo+Center+Sofia+Bulgaria&output=embed"
-                    width="100%"
-                    height="100%"
-                    style={{border: 0, borderRadius: 8}}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                />
+                {conference?.venueMapUrl && (
+                    <iframe
+                        title={conference.venueName ?? 'Venue map'}
+                        src={conference.venueMapUrl}
+                        width="100%"
+                        height="100%"
+                        style={{border: 0, borderRadius: 8}}
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                    />
+                )}
             </Box>
         </Box>
     );

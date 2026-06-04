@@ -10,4 +10,7 @@ import java.util.List;
 public class ImportProperties {
     private String baseUrl;
     private List<String> halls = List.of("hall A", "hall B", "workshops");
+    private String conferenceName = "jPrime";
+    private Integer conferenceYear = 2026;
+    private String logoUrl = "https://jprime.io/images/jprime-small.png";
 }

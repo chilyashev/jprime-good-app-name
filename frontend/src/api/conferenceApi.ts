@@ -3,6 +3,9 @@ export interface ConferenceSettings {
     name: string;
     year: number;
     logoUrl: string | null;
+    venueName: string | null;
+    venueAddress: string | null;
+    venueMapUrl: string | null;
 }
 
 export async function fetchConferenceSettings(): Promise<ConferenceSettings> {

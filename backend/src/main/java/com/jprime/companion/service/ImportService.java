@@ -29,12 +29,12 @@ public class ImportService {
 
     @EventListener(ApplicationReadyEvent.class)
     public void importAll() {
-        Conference conference = conferenceRepository.findByNameAndYear("jPrime", 2026)
+        Conference conference = conferenceRepository.findByNameAndYear(importProperties.getConferenceName(), importProperties.getConferenceYear())
                 .orElseGet(() -> {
                     Conference c = new Conference();
-                    c.setName("jPrime");
-                    c.setYear(2026);
-                    c.setLogoUrl("https://jprime.io/images/jprime-small.png");
+                    c.setName(importProperties.getConferenceName());
+                    c.setYear(importProperties.getConferenceYear());
+                    c.setLogoUrl(importProperties.getLogoUrl());
                     return conferenceRepository.save(c);
                 });
 
